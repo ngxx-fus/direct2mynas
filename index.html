@@ -27,35 +27,48 @@
         if (snapshot.exists()) {
           const data = snapshot.val();
 
-          const container = document.getElementById("data");
-          container.innerHTML = "<h2>Firebase RTBD data:</h2><pre>" + JSON.stringify(data, null, 2) + "</pre>";
+          const infoBox = document.getElementById("info-box");
+          infoBox.innerHTML = "<h2>Firebase RTBD data:</h2><pre>" + JSON.stringify(data, null, 2) + "</pre>";
+
+          const buttons = document.getElementById("buttons");
+          buttons.innerHTML = ""; // clear cũ
 
           // Nút MyNAS
           if (data.GlobalIp && data.FileBrowsePort) {
             const targetUrl = `https://${data.GlobalIp}:${data.FileBrowsePort}`;
-            const btn = document.createElement("button");
-            btn.innerText = " Direct to MyNAS";
-            btn.onclick = () => window.location.href = targetUrl;
-            container.appendChild(btn);
+            const btn = createButton("Direct to MyNAS (Login required)", "#3259CD", targetUrl);
+            buttons.appendChild(btn);
           }
 
           // Nút OMV
           if (data.GlobalIp && data.OMVPort) {
             const targetUrlOMV = `https://${data.GlobalIp}:${data.OMVPort}`;
-            const btnOMV = document.createElement("button");
-            btnOMV.innerText = " Direct to OMV";
-            btnOMV.style.backgroundColor = "rgb(28, 167, 111)";
-            btnOMV.onclick = () => window.location.href = targetUrlOMV;
-            container.appendChild(btnOMV);
+            const btnOMV = createButton("Direct to OMV (Login required)", "#00809D", targetUrlOMV);
+            buttons.appendChild(btnOMV);
+          }
+
+          // Shared
+          if (data.GlobalIp && data.FileBrowsePort) {
+            const targetUrlShared = `https://${data.GlobalIp}:${data.FileBrowsePort}/share/f7vgQCfs`;
+            const btnShared = createButton("Direct to Shared folder", "#17313E", targetUrlShared);
+            buttons.appendChild(btnShared);
           }
 
         } else {
-          document.getElementById("data").innerText = "Không có dữ liệu trong database.";
+          document.getElementById("info-box").innerText = "Không có dữ liệu trong database.";
         }
       } catch (err) {
         console.error(err);
-        document.getElementById("data").innerText = "Lỗi khi đọc dữ liệu từ Firebase.";
+        document.getElementById("info-box").innerText = "Lỗi khi đọc dữ liệu từ Firebase.";
       }
+    }
+
+    function createButton(text, color, link) {
+      const btn = document.createElement("button");
+      btn.innerHTML = `<span class="square"></span><span class="btn-text">${text}</span>`;
+      btn.style.backgroundColor = color;
+      btn.onclick = () => window.location.href = link;
+      return btn;
     }
 
     loadData();
@@ -66,29 +79,87 @@
       color: white;
       font-family: monospace;
       padding: 20px;
+      text-align: center;
+    }
+
+    /* Khung to */
+    #data {
+      border: 2px solid white;
+      padding: 20px;
+      margin: 0 auto 20px auto;
+      width: 600px;
+      border-radius: 10px;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Ô nhỏ chứa thông tin */
+    #info-box {
+      background: transparent;
+      padding: 10px;
+      width: 90%;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    /* Khối chứa các nút */
+    #buttons {
+      width: 90%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     button {
-      display: block;
-      margin-top: 20px;
-      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
       font-size: 16px;
-      background: rgb(50, 89, 205);
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      width: 200px;
+      width: 100%; /* Tất cả nút bằng chiều rộng */
+      text-align: left;
+    }
+
+    .square {
+      width: 15px;
+      height: 15px;
+      background-color: white;
+      display: inline-block;
+      margin-right: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .btn-text {
+      flex: 1;
+      text-align: left;
     }
 
     button:hover {
-      opacity: 0.8;
+      opacity: 0.85;
+    }
+
+    footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #aaa;
     }
   </style>
 </head>
 
 <body>
-  <div id="data">Loading...</div>
+  <div id="data">
+    <div id="info-box">Loading...</div>
+    <div id="buttons"></div>
+  </div>
+  <footer>
+    Nguyễn Thanh Phú - 0845939722 - msnp@outlook.com.vn
+  </footer>
 </body>
 
 </html>
