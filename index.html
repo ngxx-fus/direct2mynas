@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>NAS Redirect</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyANRc0UBr3t9rAz6LRjuatZKlGGk7dTG4Y",
+      authDomain: "my-nas-ip.firebaseapp.com",
+      databaseURL: "https://my-nas-ip-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "my-nas-ip",
+      storageBucket: "my-nas-ip.firebasestorage.app",
+      messagingSenderId: "306142893095",
+      appId: "1:306142893095:web:ce7577eeb0ec2953162a02"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    async function loadData() {
+      try {
+        const snapshot = await get(ref(db));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+
+          const container = document.getElementById("data");
+          container.innerHTML = "<h2>Firebase RTBD data:</h2><pre>" + JSON.stringify(data, null, 2) + "</pre>";
+
+          // Nút MyNAS
+          if (data.GlobalIp && data.FileBrowsePort) {
+            const targetUrl = `https://${data.GlobalIp}:${data.FileBrowsePort}`;
+            const btn = document.createElement("button");
+            btn.innerText = " Direct to MyNAS";
+            btn.onclick = () => window.location.href = targetUrl;
+            container.appendChild(btn);
+          }
+
+          // Nút OMV
+          if (data.GlobalIp && data.OMVPort) {
+            const targetUrlOMV = `https://${data.GlobalIp}:${data.OMVPort}`;
+            const btnOMV = document.createElement("button");
+            btnOMV.innerText = " Direct to OMV";
+            btnOMV.style.backgroundColor = "rgb(28, 167, 111)";
+            btnOMV.onclick = () => window.location.href = targetUrlOMV;
+            container.appendChild(btnOMV);
+          }
+
+        } else {
+          document.getElementById("data").innerText = "Không có dữ liệu trong database.";
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("data").innerText = "Lỗi khi đọc dữ liệu từ Firebase.";
+      }
+    }
+
+    loadData();
+  </script>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: monospace;
+      padding: 20px;
+    }
+
+    button {
+      display: block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: rgb(50, 89, 205);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 200px;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="data">Loading...</div>
+</body>
+
+</html>
