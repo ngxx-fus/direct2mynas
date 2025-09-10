@@ -35,7 +35,7 @@
 
           // Nút MyNAS
           if (data.GlobalIp && data.FileBrowsePort) {
-            const targetUrl = `https://${data.GlobalIp}:${data.FileBrowsePort}`;
+            const targetUrl = `http://${data.GlobalIp}:${data.FileBrowsePort}`;
             const btn = createButton("Direct to MyNAS (Login required)", "#3259CD", targetUrl);
             buttons.appendChild(btn);
           }
@@ -49,7 +49,7 @@
 
           // Shared
           if (data.GlobalIp && data.FileBrowsePort) {
-            const targetUrlShared = `https://${data.GlobalIp}:${data.FileBrowsePort}/share/f7vgQCfs`;
+            const targetUrlShared = `http://${data.GlobalIp}:${data.FileBrowsePort}/share/f7vgQCfs`;
             const btnShared = createButton("Direct to Shared folder", "#17313E", targetUrlShared);
             buttons.appendChild(btnShared);
           }
