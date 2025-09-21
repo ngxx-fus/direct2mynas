@@ -36,14 +36,14 @@
           // Nút MyNAS
           if (data.GlobalIp && data.FileBrowsePort) {
             const targetUrl = `http://${data.GlobalIp}:${data.FileBrowsePort}`;
-            const btn = createButton("Direct to MyNAS (Login required)", "#3259CD", targetUrl);
+            const btn = createButton("Direct to MyNAS - File Browser (Login required)", "#3259CD", targetUrl);
             buttons.appendChild(btn);
           }
 
           // Nút OMV
           if (data.GlobalIp && data.OMVPort) {
             const targetUrlOMV = `https://${data.GlobalIp}:${data.OMVPort}`;
-            const btnOMV = createButton("Direct to OMV (Login required)", "#00809D", targetUrlOMV);
+            const btnOMV = createButton("Direct to OpenMediaVault (Login required)", "#00809D", targetUrlOMV);
             buttons.appendChild(btnOMV);
           }
 
@@ -158,7 +158,8 @@
     <div id="buttons"></div>
   </div>
   <footer>
-    Nguyễn Thanh Phú - 0845939722 - msnp@outlook.com.vn
+    Nguyễn Thanh Phú - 0845939722 - msnp@outlook.com.vn<br>
+    File Browser Username/Password: guest / guest
     <br>
     <details>
     <summary>note ._.</summary>
