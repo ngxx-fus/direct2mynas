@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>NAS REDIRECT (CHUYỂN TIẾP ĐẾN NAS CỦA Fus)</title>
+  <title>NAS REDIRECT (CHUYỂN TIẾP ĐẾN NAS CỦA FUS)</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
@@ -21,6 +21,21 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    /// @brief Kiểm tra kết nối đến một URL cụ thể bằng phương thức fetch
+    async function checkServerStatus(url) {
+      try {
+        // Sử dụng mode no-cors để tránh bị lỗi chính sách bảo mật khi chỉ muốn check server sống/chết
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout sau 5 giây
+
+        await fetch(url, { mode: 'no-cors', signal: controller.signal });
+        clearTimeout(timeoutId);
+        return true;
+      } catch (err) {
+        return false;
+      }
+    }
+
     async function loadData() {
       try {
         const snapshot = await get(ref(db));
@@ -28,38 +43,43 @@
           const data = snapshot.val();
 
           const infoBox = document.getElementById("info-box");
-          infoBox.innerHTML = "<h2>Firebase RTBD data:</h2><pre>" + JSON.stringify(data, null, 2) + "</pre>";
+          infoBox.innerHTML = "<h2>Firebase RTDB data:</h2><pre>" + JSON.stringify(data, null, 2) + "</pre>";
 
           const buttons = document.getElementById("buttons");
-          buttons.innerHTML = ""; // clear cũ
+          buttons.innerHTML = ""; 
 
-          // Nút MyNAS
-          if (data.GlobalIp && data.FileBrowsePort) {
-            const targetUrl = `http://${data.GlobalIp}:${data.FileBrowsePort}`;
-            const btn = createButton("Direct to MyNAS - File Browser (Login required)", "#3259CD", targetUrl);
-            buttons.appendChild(btn);
-          }
+          // Cấu hình các nút
+          const services = [
+            {
+              name: "Direct to MyNAS - File Browser (Login required)",
+              color: "#3259CD",
+              url: `http://${data.GlobalIp}:${data.FileBrowsePort}`
+            },
+            {
+              name: "Direct to OpenMediaVault (Login required)",
+              color: "#00809D",
+              url: `https://${data.GlobalIp}:${data.OMVPort}`
+            },
+            {
+              name: "Direct to Shared folder",
+              color: "#17313E",
+              url: `http://${data.GlobalIp}:${data.FileBrowsePort}/share/f7vgQCfs`
+            }
+          ];
 
-          // Nút OMV
-          if (data.GlobalIp && data.OMVPort) {
-            const targetUrlOMV = `https://${data.GlobalIp}:${data.OMVPort}`;
-            const btnOMV = createButton("Direct to OpenMediaVault (Login required)", "#00809D", targetUrlOMV);
-            buttons.appendChild(btnOMV);
-          }
-
-          // Shared
-          if (data.GlobalIp && data.FileBrowsePort) {
-            const targetUrlShared = `http://${data.GlobalIp}:${data.FileBrowsePort}/share/f7vgQCfs`;
-            const btnShared = createButton("Direct to Shared folder", "#17313E", targetUrlShared);
-            buttons.appendChild(btnShared);
-          }
+          services.forEach(service => {
+            if (data.GlobalIp) {
+              const btn = createButton(service.name, service.color, service.url);
+              buttons.appendChild(btn);
+            }
+          });
 
         } else {
-          document.getElementById("info-box").innerText = "No record found! (Không có dữ liệu trong database!)";
+          document.getElementById("info-box").innerText = "No record found! (Không có dữ liệu!)";
         }
       } catch (err) {
         console.error(err);
-        document.getElementById("info-box").innerText = "Error while reading from Firebase! (Lỗi khi đọc dữ liệu từ Firebase)";
+        document.getElementById("info-box").innerText = "Error while reading from Firebase!";
       }
     }
 
@@ -67,88 +87,37 @@
       const btn = document.createElement("button");
       btn.innerHTML = `<span class="square"></span><span class="btn-text">${text}</span>`;
       btn.style.backgroundColor = color;
-      btn.onclick = () => window.location.href = link;
+      
+      btn.onclick = async () => {
+        btn.style.opacity = "0.5";
+        btn.innerText = "Checking status...";
+        
+        const isOnline = await checkServerStatus(link);
+        
+        if (isOnline) {
+          window.location.href = link;
+        } else {
+          alert("❌ SERVER OFFLINE!\n\nHệ thống NAS hiện không thể kết nối. Vui lòng kiểm tra nguồn điện hoặc kết nối mạng của thiết bị.");
+          btn.style.opacity = "1";
+          btn.innerHTML = `<span class="square"></span><span class="btn-text">${text}</span>`;
+        }
+      };
       return btn;
     }
 
     loadData();
   </script>
   <style>
-    body {
-      background-color: black;
-      color: white;
-      font-family: monospace;
-      padding: 20px;
-      text-align: center;
-    }
-
-    /* Khung to */
-    #data {
-      border: 2px solid white;
-      padding: 20px;
-      margin: 0 auto 20px auto;
-      width: 600px;
-      border-radius: 10px;
-      background: #111;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* Ô nhỏ chứa thông tin */
-    #info-box {
-      background: transparent;
-      padding: 10px;
-      width: 90%;
-      text-align: left;
-      margin-bottom: 20px;
-    }
-
-    /* Khối chứa các nút */
-    #buttons {
-      width: 90%;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    button {
-      display: flex;
-      align-items: center;
-      padding: 10px 15px;
-      font-size: 16px;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      width: 100%; /* Tất cả nút bằng chiều rộng */
-      text-align: left;
-    }
-
-    .square {
-      width: 15px;
-      height: 15px;
-      background-color: white;
-      display: inline-block;
-      margin-right: 10px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    .btn-text {
-      flex: 1;
-      text-align: left;
-    }
-
-    button:hover {
-      opacity: 0.85;
-    }
-
-    footer {
-      margin-top: 30px;
-      font-size: 14px;
-      color: #aaa;
-    }
+    /* (Giữ nguyên phần CSS của bạn) */
+    body { background-color: black; color: white; font-family: monospace; padding: 20px; text-align: center; }
+    #data { border: 2px solid white; padding: 20px; margin: 0 auto 20px auto; width: 600px; border-radius: 10px; background: #111; display: flex; flex-direction: column; align-items: center; }
+    #info-box { background: transparent; padding: 10px; width: 90%; text-align: left; margin-bottom: 20px; }
+    #buttons { width: 90%; display: flex; flex-direction: column; gap: 10px; }
+    button { display: flex; align-items: center; padding: 10px 15px; font-size: 16px; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; text-align: left; transition: 0.3s; }
+    .square { width: 15px; height: 15px; background-color: white; display: inline-block; margin-right: 10px; border-radius: 2px; flex-shrink: 0; }
+    .btn-text { flex: 1; text-align: left; }
+    button:hover { opacity: 0.85; transform: scale(1.02); }
+    footer { margin-top: 30px; font-size: 14px; color: #aaa; }
   </style>
 </head>
 
@@ -161,9 +130,9 @@
     Nguyễn Thanh Phú - 0845939722 - msnp@outlook.com.vn
     <br>
     <details>
-    <summary>note ._.</summary>
-    <p>Sometimes, the service is not available due to a <b>power failure</b>.</p>
-    File Browser Username/Password: guest / guest
+      <summary>note ._.</summary>
+      <p>Sometimes, the service is not available due to a <b>power failure</b>.</p>
+      File Browser Username/Password: guest / guest
     </details>
   </footer>
 </body>
