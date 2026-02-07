@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>NAS Redirect</title>
+  <title>NAS REDIRECT (CHUYỂN TIẾP ĐẾN NAS CỦA Fus)</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
@@ -55,11 +55,11 @@
           }
 
         } else {
-          document.getElementById("info-box").innerText = "Không có dữ liệu trong database.";
+          document.getElementById("info-box").innerText = "No record found! (Không có dữ liệu trong database!)";
         }
       } catch (err) {
         console.error(err);
-        document.getElementById("info-box").innerText = "Lỗi khi đọc dữ liệu từ Firebase.";
+        document.getElementById("info-box").innerText = "Error while reading from Firebase! (Lỗi khi đọc dữ liệu từ Firebase)";
       }
     }
 
