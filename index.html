@@ -20,22 +20,67 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    
+    let autoRedirectInterval; /// @brief Global timer reference for the countdown.
+    let targetButton = null;  /// @brief Reference to the auto-redirect button.
+    let targetButtonName = ""; /// @brief Original text of the auto-redirect button.
 
-    /// @brief Kiểm tra kết nối đến một URL cụ thể bằng phương thức fetch
-    async function checkServerStatus(url) {
-      try {
-        // Sử dụng mode no-cors để tránh bị lỗi chính sách bảo mật khi chỉ muốn check server sống/chết
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout sau 5 giây
+    /// @brief Uses an image-loading trick to check if the server is responding.
+    function checkServerStatus(url) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        const timer = setTimeout(() => {
+          img.src = ""; 
+          resolve(false); 
+        }, 3500);
 
-        await fetch(url, { mode: 'no-cors', signal: controller.signal });
-        clearTimeout(timeoutId);
-        return true;
-      } catch (err) {
-        return false;
+        img.onload = () => {
+          clearTimeout(timer);
+          resolve(true); 
+        };
+
+        img.onerror = () => {
+          clearTimeout(timer);
+          resolve(true); 
+        };
+
+        img.src = url + "/favicon.ico?t=" + new Date().getTime(); 
+      });
+    }
+
+    /// @brief Stops the auto-redirect and restores the button text.
+    function stopAutoRedirect() {
+      if (autoRedirectInterval) {
+        clearInterval(autoRedirectInterval);
+        autoRedirectInterval = null;
+        if (targetButton) {
+          const textSpan = targetButton.querySelector(".btn-text");
+          textSpan.innerText = targetButtonName;
+        }
       }
     }
 
+    /// @brief Starts the 15s countdown directly on the button label.
+    /// @param btn The button element to update.
+    /// @param url The destination URL.
+    function startCountdown(btn, url) {
+      let secondsLeft = 10;
+      targetButton = btn;
+      const textSpan = btn.querySelector(".btn-text");
+      targetButtonName = textSpan.innerText;
+
+      autoRedirectInterval = setInterval(() => {
+        secondsLeft--;
+        textSpan.innerText = `${targetButtonName} (${secondsLeft}s)`;
+        
+        if (secondsLeft <= 0) {
+          clearInterval(autoRedirectInterval);
+          window.location.href = url;
+        }
+      }, 1000);
+    }
+
+    /// @brief Fetches NAS IP and Port info from Firebase and builds the UI.
     async function loadData() {
       try {
         const snapshot = await get(ref(db));
@@ -48,34 +93,38 @@
           const buttons = document.getElementById("buttons");
           buttons.innerHTML = ""; 
 
-          // Cấu hình các nút
           const services = [
             {
-              name: "Direct to MyNAS - File Browser (Login required)",
+              name: "File Browser (Login required)",
               color: "#3259CD",
               url: `http://${data.GlobalIp}:${data.FileBrowsePort}`
             },
             {
-              name: "Direct to OpenMediaVault (Login required)",
+              name: "OpenMediaVault (Login required)",
               color: "#00809D",
               url: `https://${data.GlobalIp}:${data.OMVPort}`
             },
             {
-              name: "Direct to Shared folder",
+              name: "Shared folder",
               color: "#17313E",
               url: `http://${data.GlobalIp}:${data.FileBrowsePort}/share/f7vgQCfs`
             }
           ];
 
-          services.forEach(service => {
+          services.forEach((service, index) => {
             if (data.GlobalIp) {
               const btn = createButton(service.name, service.color, service.url);
               buttons.appendChild(btn);
+              
+              /// Start countdown on the first button (File Browser)
+              if (index === 0) {
+                startCountdown(btn, service.url);
+              }
             }
           });
 
         } else {
-          document.getElementById("info-box").innerText = "No record found! (Không có dữ liệu!)";
+          document.getElementById("info-box").innerText = "No record found!";
         }
       } catch (err) {
         console.error(err);
@@ -83,12 +132,16 @@
       }
     }
 
+    /// @brief Creates a styled button with a built-in availability check.
     function createButton(text, color, link) {
       const btn = document.createElement("button");
       btn.innerHTML = `<span class="square"></span><span class="btn-text">${text}</span>`;
       btn.style.backgroundColor = color;
       
       btn.onclick = async () => {
+        stopAutoRedirect(); /// Cancel countdown if any interaction occurs.
+
+        const originalContent = btn.innerHTML;
         btn.style.opacity = "0.5";
         btn.innerText = "Checking status...";
         
@@ -97,9 +150,9 @@
         if (isOnline) {
           window.location.href = link;
         } else {
-          alert("❌ SERVER OFFLINE!\n\nHệ thống NAS hiện không thể kết nối. Vui lòng kiểm tra nguồn điện hoặc kết nối mạng của thiết bị.");
+          alert("❌ SERVER OFFLINE!\nPlease check the NAS power or network.");
           btn.style.opacity = "1";
-          btn.innerHTML = `<span class="square"></span><span class="btn-text">${text}</span>`;
+          btn.innerHTML = originalContent;
         }
       };
       return btn;
@@ -108,22 +161,21 @@
     loadData();
   </script>
   <style>
-    /* (Giữ nguyên phần CSS của bạn) */
     body { background-color: black; color: white; font-family: monospace; padding: 20px; text-align: center; }
     #data { border: 2px solid white; padding: 20px; margin: 0 auto 20px auto; width: 600px; border-radius: 10px; background: #111; display: flex; flex-direction: column; align-items: center; }
     #info-box { background: transparent; padding: 10px; width: 90%; text-align: left; margin-bottom: 20px; }
     #buttons { width: 90%; display: flex; flex-direction: column; gap: 10px; }
-    button { display: flex; align-items: center; padding: 10px 15px; font-size: 16px; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; text-align: left; transition: 0.3s; }
+    button { display: flex; align-items: center; padding: 12px 15px; font-size: 16px; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; text-align: left; transition: 0.3s; }
     .square { width: 15px; height: 15px; background-color: white; display: inline-block; margin-right: 10px; border-radius: 2px; flex-shrink: 0; }
-    .btn-text { flex: 1; text-align: left; }
+    .btn-text { flex: 1; text-align: left; font-weight: bold; }
     button:hover { opacity: 0.85; transform: scale(1.02); }
-    footer { margin-top: 30px; font-size: 14px; color: #aaa; }
+    footer { margin-top: 30px; font-size: 14px; color: #aaa; line-height: 1.6; }
   </style>
 </head>
 
 <body>
   <div id="data">
-    <div id="info-box">Loading...</div>
+    <div id="info-box">Loading... (Đang tải...)</div>
     <div id="buttons"></div>
   </div>
   <footer>
