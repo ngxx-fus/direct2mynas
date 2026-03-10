@@ -21,13 +21,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        /// @brief Fetches NAS IP and Port info from Firebase and builds the UI.
         async function loadData() {
             try {
                 const snapshot = await get(ref(db));
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-
                     const infoText = document.getElementById("info-text");
                     infoText.innerHTML = "<h3>Firebase RTDB:</h3><pre style='display:inline-block; text-align:left; margin:0;'>" + JSON.stringify(data, null, 2) + "</pre>";
 
@@ -35,21 +33,9 @@
                     buttons.innerHTML = ""; 
 
                     const services = [
-                        {
-                            name: "File Browser",
-                            color: "#3259CD",
-                            url: `http://${data.GlobalIp}:${data.FileBrowsePort}`
-                        },
-                        {
-                            name: "OpenMediaVault",
-                            color: "#00809D",
-                            url: `http://${data.GlobalIp}:${data.OMVPort}`
-                        },
-                        {
-                            name: "Shared Folder",
-                            color: "#17313E",
-                            url: `http://${data.GlobalIp}:${data.FileBrowsePort}/public/share/xmNftY4iX41PMaU8-e0NyQ`
-                        }
+                        { name: "File Browser", color: "#3259CD", url: `http://${data.GlobalIp}:${data.FileBrowsePort}` },
+                        { name: "OpenMediaVault", color: "#00809D", url: `http://${data.GlobalIp}:${data.OMVPort}` },
+                        { name: "Shared Folder", color: "#17313E", url: `http://${data.GlobalIp}:${data.FileBrowsePort}/public/share/xmNftY4iX41PMaU8-e0NyQ` }
                     ];
 
                     services.forEach((service) => {
@@ -58,26 +44,17 @@
                             buttons.appendChild(btn);
                         }
                     });
-
-                } else {
-                    document.getElementById("info-text").innerText = "No record found!";
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById("info-text").innerText = "Error while reading from Firebase!";
             }
         }
 
-        /// @brief Creates a styled button that redirects immediately on click.
         function createButton(text, color, link) {
             const btn = document.createElement("button");
             btn.innerHTML = `<span class="square"></span><span class="btn-text">${text}</span>`;
             btn.style.backgroundColor = color;
-            
-            btn.onclick = () => {
-                /* Redirect directly to the service URL */
-                window.location.href = link;
-            };
+            btn.onclick = () => { window.location.href = link; };
             return btn;
         }
 
@@ -88,44 +65,36 @@
             background-color: black; 
             color: white; 
             font-family: monospace; 
-            padding: 3% 12.5%; 
-            text-align: center; 
             margin: 0;
+            padding: 20px 0;
             box-sizing: border-box;
             min-height: 100vh;
+            /* Căn giữa toàn bộ khối 600px ra giữa màn hình */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
 
-        /* --- Responsive Layout for Vertical/Mobile --- */
-        @media (max-aspect-ratio: 1/1), (max-width: 850px) {
-            body { padding: 3%; }
-            #main-card, #preview-container { 
-                width: 100% !important; 
-            }
-            #main-card { flex-direction: column !important; }
-            #buttons { 
-                width: 100% !important; 
-                border-left: none !important;
-                border-top: 1px solid #444;
-                padding-top: 15px;
-            }
-            #info-text { padding-bottom: 15px; }
+        /* Container chính chứa toàn bộ data và footer */
+        #container-600 {
+            width: 600px;
+            min-width: 600px; /* Ép cứng 600px kể cả trên điện thoại */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         #data { 
-            padding: 20px; 
-            margin: 0 auto; 
-            width: 100%; 
+            width: 100%;
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            box-sizing: border-box;
         }
 
-        /* --- Main Box: Fixed 600px width on desktop --- */
         #main-card {
             display: flex;
             flex-direction: row;
-            width: 600px;
+            width: 100%;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid white;
             border-radius: 10px;
@@ -188,15 +157,8 @@
 
         button:hover { opacity: 0.85; transform: scale(1.02); }
         
-        footer { 
-            margin-top: 30px; 
-            font-size: 14px; 
-            color: #aaa; 
-            line-height: 1.6; 
-        }
-
         #preview-container {
-            width: 600px; 
+            width: 100%; 
             border: 1px solid white;
             border-radius: 10px;
             overflow: hidden;
@@ -209,29 +171,53 @@
             text-align: left;
             min-height: 400px;
         }
+        
+        footer { 
+            margin-top: 30px; 
+            font-size: 12px; 
+            color: #aaa; 
+            width: 100%;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* --- Xóa Media Query thay đổi width để giữ 600px trên mobile --- */
+        @media (max-aspect-ratio: 1/1), (max-width: 850px) {
+            /* Chỉ thay đổi bố cục bên trong Card, không đổi width container */
+            #main-card { flex-direction: column !important; }
+            #buttons { 
+                width: 100% !important; 
+                border-left: none !important;
+                border-top: 1px solid #444;
+                padding-top: 15px;
+            }
+            #info-text { padding-bottom: 15px; }
+        }
     </style>
 </head>
 
 <body>
-    <div id="data">
-        <div id="main-card">
-            <div id="info-text">Loading... (Đang tải...)</div>
-            <div id="buttons"></div>
-        </div>
-        
-        <div id="preview-container">
-            <div style="background: #333; padding: 8px 12px; border-bottom: 1px solid #444; text-align: center; font-size: 12px; color: #ccc; font-family: monospace; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <span style="color: #27c93f;">●</span> Code Stuff (Ideone)
+    <div id="container-600">
+        <div id="data">
+            <div id="main-card">
+                <div id="info-text">Loading... (Đang tải...)</div>
+                <div id="buttons"></div>
             </div>
-            <div class="ideone-wrapper">
-                <script src="https://ideone.com/e.js/tkEsSa" type="text/javascript"></script>
+            
+            <div id="preview-container">
+                <div style="background: #333; padding: 8px 12px; border-bottom: 1px solid #444; text-align: center; font-size: 12px; color: #ccc; font-family: monospace; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span style="color: #27c93f;">●</span> Code Stuff (Ideone)
+                </div>
+                <div class="ideone-wrapper">
+                    <script src="https://ideone.com/e.js/tkEsSa" type="text/javascript"></script>
+                </div>
             </div>
         </div>
-    </div>
 
-    <footer>
-        Nguyễn Thanh Phú - 0845939722 - msnp@outlook.com.vn
-    </footer>
+        <footer>
+            Nguyễn Thanh Phú - 0845939722 - msnp@outlook.com.vn
+        </footer>
+    </div>
 </body>
 
 </html>
