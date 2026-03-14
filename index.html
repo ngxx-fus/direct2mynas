@@ -23,41 +23,62 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        /// @brief Creates an anchor element styled as a button opening in a new tab
+        function createButton(name, color, url) {
+        //Call createElement to instantiate anchor object
+            const link = document.createElement("a");
+            link.href = url;
+            link.target = "_blank";
+            link.innerText = name;
+            link.style.backgroundColor = color;
+            link.style.display = "inline-block";
+            link.style.textDecoration = "none";
+        //Return constructed anchor element
+            return link;
+        }
+        
+        /// @brief Fetches Firebase data and generates service buttons
         async function loadData() {
+        //Execute try block to handle potential asynchronous errors
             try {
+                //Call get function with database reference
                 const snapshot = await get(ref(db));
+                //Check if snapshot contains data
                 if (snapshot.exists()) {
+                    //Call val function to extract data payload
                     const data = snapshot.val();
+                    //Call getElementById to retrieve info text element
                     const infoText = document.getElementById("info-text");
+                    //Call JSON.stringify to format data payload
                     infoText.innerHTML = "<h3>Firebase RTDB:</h3><pre style='display:inline-block; text-align:left; margin:0;'>" + JSON.stringify(data, null, 2) + "</pre>";
-
+        
+                    //Call getElementById to retrieve buttons element
                     const buttons = document.getElementById("buttons");
                     buttons.innerHTML = ""; 
-
+        
                     const services = [
                         { name: "File Browser", color: "#3259CD", url: `http://ngxxfusnas.servehttp.com:${data.FileBrowsePort}` },
                         { name: "OpenMediaVault", color: "#00809D", url: `http://ngxxfusnas.servehttp.com:${data.OMVPort}` },
                         { name: "Shared Folder", color: "#17313E", url: `http://ngxxfusnas.servehttp.com:${data.FileBrowsePort}/public/share/xmNftY4iX41PMaU8-e0NyQ` }
                     ];
-
-                    services.forEach((service) => {
+        
+                    //Iterate through services array using for-of loop
+                    for (const service of services) {
+                        //Check if GlobalIp property exists
                         if (data.GlobalIp) {
+                            //Call createButton to instantiate UI element
                             const btn = createButton(service.name, service.color, service.url);
+                            //Call appendChild to attach button to DOM
                             buttons.appendChild(btn);
                         }
-                    });
+                    }
                 }
-            } catch (err) {
+            } 
+            //Handle execution exceptions in catch block
+            catch (err) {
+                //Call console.error to log exception details
                 console.error(err);
             }
-        }
-
-        function createButton(text, color, link) {
-            const btn = document.createElement("button");
-            btn.innerHTML = `<span class="square"></span><span class="btn-text">${text}</span>`;
-            btn.style.backgroundColor = color;
-            btn.onclick = () => { window.location.href = link; };
-            return btn;
         }
 
         loadData();
